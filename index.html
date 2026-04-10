@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alphanam ... Yield Model D₀ Converter v2</title>
+<title>Alphanam ...  Yield Model D₀ Converter v2</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=IBM+Plex+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -359,6 +359,105 @@ td.tcy{color:var(--yellow);}
   <p class="h-sub">n-factor(클러스터링 파라미터) 포함 완전 변환 &mdash; 기본값 n = 1</p>
 </header>
 
+<!-- ══ CONVERTER ══ -->
+<div class="conv-wrap" style="margin-top:48px;">
+  <div style="font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border);">◆ D₀ 변환기</div>
+  <div class="tabs">
+    <button class="tab tp" id="tab-p" onclick="setMode('p')">▶ Poisson D₀ → B-E D₀</button>
+    <button class="tab" id="tab-be" onclick="setMode('be')">▶ B-E D₀ → Poisson D₀</button>
+  </div>
+  <div class="conv-panel">
+
+    <!-- n slider -->
+    <div style="margin-bottom:22px;">
+      <div class="igrp">
+        <label>n-factor (클러스터링 파라미터) <span class="badge badge-n">B-E 전용</span></label>
+      </div>
+      <div class="n-slider-row">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">1</span>
+        <input type="range" id="n-slider" min="1" max="100" step="1" value="1"
+          oninput="syncN(this.value)" style="flex:1;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">100</span>
+        <div class="slider-val" id="n-disp">1</div>
+        <input type="number" id="n-input" value="1" min="0.001" max="9999" step="0.001"
+          class="inp-n" style="width:80px;font-size:14px;padding:8px 10px;"
+          oninput="syncNInput(this.value)" onblur="enforceN3dec(this)">
+      </div>
+      <div class="n-note">
+        <span class="hi">n = 1</span> → B-E 단순형 (완전 클러스터링) &nbsp;|&nbsp;
+        <span class="hi">n → ∞</span> → Poisson과 동일 &nbsp;|&nbsp;
+        현재: <span class="hi" id="n-interp">완전 클러스터링 모드</span>
+      </div>
+    </div>
+
+        <div class="inp-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="igrp">
+        <label id="d0-lbl">Poisson D₀ <span class="badge badge-key">입력</span><br>
+          <span class="unit" id="d0-unit-lbl">(defects / cm²)</span>
+        </label>
+        <div id="unit-sel" style="display:none;flex-direction:row;gap:6px;margin-bottom:8px;">
+          <button id="unit-cm"  class="nc-btn active" onclick="setInputUnit('cm')">cm²</button>
+          <button id="unit-in"  class="nc-btn"        onclick="setInputUnit('inch')">inch²</button>
+        </div>
+        <input type="number" id="d0-inp" class="inp-p" placeholder="예: 0.1" min="0.0001" step="0.001">
+        <div class="err" id="d0-err">0보다 큰 값을 입력하세요</div>
+      </div>
+      <div class="igrp">
+        <label>칩 면적 A <span class="badge badge-key">입력</span><br><span class="unit">(cm²)</span></label>
+        <input type="number" id="a-inp" class="inp-p" placeholder="예: 1.5" min="0.001" step="0.1" value="1.5">
+        <div class="err" id="a-err">0보다 큰 값을 입력하세요</div>
+      </div>
+    </div>
+
+
+
+    <button class="conv-btn btn-p" id="conv-btn" onclick="convert()">⟳ &nbsp; CONVERT</button>
+
+    <!-- Result -->
+    <div class="result-box" id="res-box">
+      <div class="res-title">▸ 변환 결과</div>
+      <div class="res-grid" style="grid-template-columns:repeat(5,1fr);">
+        <div class="ri">
+          <div class="rl" id="r-src-lbl">Poisson D₀</div>
+          <div class="rv cp" id="r-src">—</div>
+          <div class="ru" id="r-src-unit">defects/cm²</div>
+        </div>
+        <div class="ri">
+          <div class="rl">n-factor</div>
+          <div class="rv cv" id="r-n">—</div>
+          <div class="ru">B-E 클러스터링</div>
+        </div>
+        <div class="ri">
+          <div class="rl">Yield Y</div>
+          <div class="rv cg" id="r-y">—</div>
+          <div class="ru">A = <span id="r-a">—</span> cm²</div>
+        </div>
+        <div class="ri">
+          <div class="rl" id="r-tgt-lbl">B-E D₀ (cm²)</div>
+          <div class="rv co" id="r-tgt">—</div>
+          <div class="ru">defects/cm²</div>
+        </div>
+        <div class="ri">
+          <div class="rl" id="r-tgt-inch-lbl">B-E D₀ (inch²)</div>
+          <div class="rv" style="color:var(--yellow);" id="r-tgt-inch">—</div>
+          <div class="ru">defects/inch²</div>
+        </div>
+      </div>
+div>
+      <div class="dev-wrap">
+        <div class="dev-lbl">D₀ 차이 (Poisson 기준)</div>
+        <div class="dev-track"><div class="dev-fill" id="dev-fill" style="width:0%"></div></div>
+        <div class="dev-txt" id="dev-txt">—</div>
+      </div>
+      <div class="warn-box" id="warn-box">
+        ⚠ n이 작을수록 B-E D₀ 값이 Poisson D₀보다 크게 높아집니다.<br>
+        이는 B-E 모델이 결함 뭉침을 보정하기 위해 더 높은 결함밀도를 할당하기 때문입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <!-- ══ FORMULA BAR ══ -->
 <div class="formula-bar">
   <div class="fcard fc-p">
@@ -369,8 +468,8 @@ td.tcy{color:var(--yellow);}
   <div class="arr-mid">⇄</div>
   <div class="fcard fc-be">
     <div class="fc-tag">Bose-Einstein Model</div>
-    <div class="fc-eq">Y = (1 + D₀·A / <span class="hi-n">n</span>)<sup>−<span class="hi-n">n</span></sup></div>
-    <div class="fc-inv">→ D₀ = <span class="hi-n">n</span>·(Y<sup>−1/<span class="hi-n">n</span></sup> − 1) / A</div>
+    <div class="fc-eq">Y = 1 / (1 + D₀·A)<sup><span class="hi-n">n</span></sup></div>
+    <div class="fc-inv">→ D₀ = (Y<sup>−1/<span class="hi-n">n</span></sup> − 1) / A</div>
   </div>
 </div>
 
@@ -457,100 +556,6 @@ td.tcy{color:var(--yellow);}
           n은 <strong>실측 Yield 데이터를 곡선 피팅(curve fitting)해서 결정</strong>하는 경험적 파라미터입니다.<br>
           레이어 수는 <em>출발점 추정값</em>으로 활용하고, 실제 값은 fab마다 다릅니다.
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ CONVERTER ══ -->
-<div class="conv-wrap" style="margin-top:48px;">
-  <div style="font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border);">◆ D₀ 변환기</div>
-  <div class="tabs">
-    <button class="tab tp" id="tab-p" onclick="setMode('p')">▶ Poisson D₀ → B-E D₀</button>
-    <button class="tab" id="tab-be" onclick="setMode('be')">▶ B-E D₀ → Poisson D₀</button>
-  </div>
-  <div class="conv-panel">
-
-    <!-- n slider -->
-    <div style="margin-bottom:22px;">
-      <div class="igrp">
-        <label>n-factor (클러스터링 파라미터) <span class="badge badge-n">B-E 전용</span></label>
-      </div>
-      <div class="n-slider-row">
-        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">1</span>
-        <input type="range" id="n-slider" min="1" max="100" step="1" value="1"
-          oninput="syncN(this.value)" style="flex:1;">
-        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">100</span>
-        <div class="slider-val" id="n-disp">1</div>
-        <input type="number" id="n-input" value="1" min="0.001" max="9999" step="0.001"
-          class="inp-n" style="width:80px;font-size:14px;padding:8px 10px;"
-          oninput="syncNInput(this.value)" onblur="enforceN3dec(this)">
-      </div>
-      <div class="n-note">
-        <span class="hi">n = 1</span> → B-E 단순형 (완전 클러스터링) &nbsp;|&nbsp;
-        <span class="hi">n → ∞</span> → Poisson과 동일 &nbsp;|&nbsp;
-        현재: <span class="hi" id="n-interp">완전 클러스터링 모드</span>
-      </div>
-    </div>
-
-    <div class="inp-grid">
-      <div class="igrp">
-        <label id="d0-lbl">Poisson D₀ <span class="badge badge-key">입력</span><br><span class="unit">(defects / cm²)</span></label>
-        <input type="number" id="d0-inp" class="inp-p" placeholder="예: 0.1" min="0.0001" step="0.001">
-        <div class="err" id="d0-err">0보다 큰 값을 입력하세요</div>
-      </div>
-      <div class="igrp">
-        <label>칩 면적 A <span class="badge badge-key">입력</span><br><span class="unit">(cm²)</span></label>
-        <input type="number" id="a-inp" class="inp-p" placeholder="예: 1.5" min="0.001" step="0.1" value="1.5">
-        <div class="err" id="a-err">0보다 큰 값을 입력하세요</div>
-      </div>
-      <div class="igrp">
-        <label id="tgt-lbl">B-E D₀ 결과 <span class="badge" style="background:rgba(255,112,64,.12);color:var(--orange);">출력</span><br><span class="unit">(defects / cm²)</span></label>
-        <input type="number" id="tgt-inp" class="inp-be" placeholder="계산 결과" readonly
-          style="background:rgba(255,112,64,.06);cursor:default;">
-      </div>
-    </div>
-
-    <button class="conv-btn btn-p" id="conv-btn" onclick="convert()">⟳ &nbsp; CONVERT</button>
-
-    <!-- Result -->
-    <div class="result-box" id="res-box">
-      <div class="res-title">▸ 변환 결과</div>
-      <div class="res-grid">
-        <div class="ri">
-          <div class="rl" id="r-src-lbl">Poisson D₀</div>
-          <div class="rv cp" id="r-src">—</div>
-          <div class="ru">defects/cm²</div>
-        </div>
-        <div class="ri">
-          <div class="rl">n-factor</div>
-          <div class="rv cv" id="r-n">—</div>
-          <div class="ru">B-E 클러스터링</div>
-        </div>
-        <div class="ri">
-          <div class="rl">Yield Y</div>
-          <div class="rv cg" id="r-y">—</div>
-          <div class="ru">A = <span id="r-a">—</span> cm²</div>
-        </div>
-        <div class="ri" style="grid-column:span 1">
-          <div class="rl" id="r-tgt-lbl">B-E D₀</div>
-          <div class="rv co" id="r-tgt">—</div>
-          <div class="ru">defects/cm²</div>
-          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-            <div class="rl" style="color:var(--yellow);">B-E D₀ (inch²)</div>
-            <div class="rv" style="color:var(--yellow);font-size:16px;" id="r-tgt-inch">—</div>
-            <div class="ru">defects/inch²</div>
-          </div>
-        </div>
-      </div>
-      <div class="dev-wrap">
-        <div class="dev-lbl">D₀ 차이 (Poisson 기준)</div>
-        <div class="dev-track"><div class="dev-fill" id="dev-fill" style="width:0%"></div></div>
-        <div class="dev-txt" id="dev-txt">—</div>
-      </div>
-      <div class="warn-box" id="warn-box">
-        ⚠ n이 작을수록 B-E D₀ 값이 Poisson D₀보다 크게 높아집니다.<br>
-        이는 B-E 모델이 결함 뭉침을 보정하기 위해 더 높은 결함밀도를 할당하기 때문입니다.
       </div>
     </div>
   </div>
@@ -696,18 +701,21 @@ function setMode(m){
   if(m==='p'){
     tp.className='tab tp';
     btn.className='conv-btn btn-p';
-    d0lbl.innerHTML='Poisson D₀ <span class="badge badge-key">입력</span><br><span class="unit">(defects / cm²)</span>';
-    tgtlbl.innerHTML='B-E D₀ 결과 <span class="badge" style="background:rgba(255,112,64,.12);color:var(--orange);">출력</span><br><span class="unit">(defects / cm²)</span><br><span class="unit" style="color:var(--yellow);" id="tgt-inch-inline"></span>';
-    d0inp.className='inp-p'; tinp.className='inp-be';
+    d0inp.className='inp-p';
+    document.getElementById('unit-sel').style.display='none';
+    document.getElementById('d0-unit-lbl').textContent='(defects / cm²)';
+    inputUnit='cm';
   } else {
     tbe.className='tab tbe';
     btn.className='conv-btn btn-be';
-    d0lbl.innerHTML='B-E D₀ <span class="badge" style="background:rgba(255,112,64,.15);color:var(--orange);">입력</span><br><span class="unit">(defects / cm²)</span>';
-    tgtlbl.innerHTML='Poisson D₀ 결과 <span class="badge badge-key">출력</span><br><span class="unit">(defects / cm²)</span>';
-    d0inp.className='inp-be'; tinp.className='inp-p';
+    d0inp.className='inp-be';
+    document.getElementById('unit-sel').style.display='flex';
+    document.getElementById('d0-unit-lbl').textContent='(defects / cm²)';
+    document.getElementById('unit-cm').classList.add('active');
+    document.getElementById('unit-in').classList.remove('active');
+    inputUnit='cm';
   }
   document.getElementById('d0-inp').value='';
-  document.getElementById('tgt-inp').value='';
   document.getElementById('res-box').classList.remove('show');
   document.getElementById('warn-box').classList.remove('show');
   document.getElementById('leg-marker').style.display='none';
@@ -727,40 +735,52 @@ function be2p(d0be,a,n){ const y=yBE(d0be,a,n); return -Math.log(y)/a; }
 
 function fmt(v,d=5){ return isNaN(v)||!isFinite(v)?'—':v.toFixed(d); }
 
+// ══ Input unit state ══
+let inputUnit = 'cm';
+function setInputUnit(u){
+  inputUnit = u;
+  document.getElementById('unit-cm').classList.toggle('active', u==='cm');
+  document.getElementById('unit-in').classList.toggle('active', u==='inch');
+  document.getElementById('d0-unit-lbl').textContent = u==='cm' ? '(defects / cm²)' : '(defects / inch²)';
+}
+
 // ══ Convert ══
 function convert(){
-  const d0in = parseFloat(document.getElementById('d0-inp').value);
-  const a    = parseFloat(document.getElementById('a-inp').value);
-  const n    = getN();
+  const d0raw = parseFloat(document.getElementById('d0-inp').value);
+  const a     = parseFloat(document.getElementById('a-inp').value);
+  const n     = getN();
   let ok=true;
   const e1=document.getElementById('d0-err'), e2=document.getElementById('a-err');
-  if(isNaN(d0in)||d0in<=0){e1.style.display='block';ok=false;}else{e1.style.display='none';}
+  if(isNaN(d0raw)||d0raw<=0){e1.style.display='block';ok=false;}else{e1.style.display='none';}
   if(isNaN(a)||a<=0){e2.style.display='block';ok=false;}else{e2.style.display='none';}
   if(!ok) return;
 
+  // B-E탭+inch² 선택 시 cm²로 환산 후 계산
+  const d0in_cm = (mode==='be' && inputUnit==='inch') ? d0raw / 6.4516 : d0raw;
+
   let d0p, d0be, y;
   if(mode==='p'){
-    d0p=d0in; d0be=p2be(d0in,a,n); y=yPoisson(d0in,a);
+    d0p=d0in_cm; d0be=p2be(d0in_cm,a,n); y=yPoisson(d0in_cm,a);
   } else {
-    d0be=d0in; d0p=be2p(d0in,a,n); y=yBE(d0in,a,n);
+    d0be=d0in_cm; d0p=be2p(d0in_cm,a,n); y=yBE(d0in_cm,a,n);
   }
 
-  document.getElementById('tgt-inp').value = fmt(mode==='p'?d0be:d0p, 6);
-
   // result labels
-  document.getElementById('r-src-lbl').textContent = mode==='p'?'Poisson D₀':'B-E D₀';
-  document.getElementById('r-tgt-lbl').textContent = mode==='p'?'B-E D₀':'Poisson D₀';
+  document.getElementById('r-src-lbl').textContent = mode==='p' ? 'Poisson D₀' : 'B-E D₀ (입력)';
+  document.getElementById('r-tgt-lbl').textContent = mode==='p' ? 'B-E D₀ (cm²)' : 'Poisson D₀';
+  document.getElementById('r-tgt-inch-lbl').textContent = mode==='p' ? 'B-E D₀ (inch²)' : '—';
   const srcEl=document.getElementById('r-src'), tgtEl=document.getElementById('r-tgt');
   srcEl.className='rv '+(mode==='p'?'cp':'co');
   tgtEl.className='rv '+(mode==='p'?'co':'cp');
-  srcEl.textContent=fmt(d0in,5);
-  tgtEl.textContent=fmt(mode==='p'?d0be:d0p,5);
+  srcEl.textContent = fmt(d0raw,5);
+  document.getElementById('r-src-unit').textContent = (mode==='be' && inputUnit==='inch') ? 'defects/inch²' : 'defects/cm²';
+  tgtEl.textContent = fmt(mode==='p' ? d0be : d0p, 5);
   document.getElementById('r-n').textContent=n;
   document.getElementById('r-y').textContent=(y*100).toFixed(3)+'%';
   document.getElementById('r-a').textContent=a;
-  // B-E D0 단위 변환: 1 inch² = 6.4516 cm²
-  const d0be_show = (mode==='p') ? d0be : d0in;
-  document.getElementById('r-tgt-inch').textContent = fmt(d0be_show * 6.4516, 5);
+  // B-E D₀ inch² 출력
+  const d0be_cm = (mode==='p') ? d0be : d0in_cm;
+  document.getElementById('r-tgt-inch').textContent = mode==='p' ? fmt(d0be_cm * 6.4516, 5) : '—';
 
   // deviation
   const diff=Math.abs(d0be-d0p)/d0p*100;
