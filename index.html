@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alphanam ...    Yield Model D₀ Converter v2</title>
+<title>Alphanam ...  Yield Model D₀ Converter v2</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=IBM+Plex+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -482,9 +482,9 @@ td.tcy{color:var(--yellow);}
           oninput="syncN(this.value)" style="flex:1;">
         <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">100</span>
         <div class="slider-val" id="n-disp">1</div>
-        <input type="number" id="n-input" value="1" min="1" max="9999" step="1"
+        <input type="number" id="n-input" value="1" min="0.001" max="9999" step="0.001"
           class="inp-n" style="width:80px;font-size:14px;padding:8px 10px;"
-          oninput="syncNInput(this.value)">
+          oninput="syncNInput(this.value)" onblur="enforceN3dec(this)">
       </div>
       <div class="n-note">
         <span class="hi">n = 1</span> → B-E 단순형 (완전 클러스터링) &nbsp;|&nbsp;
@@ -636,27 +636,40 @@ let markerInfo = null;
 
 // ══ n sync ══
 function syncN(v){
-  v = Math.max(1, parseInt(v)||1);
+  v = Math.max(0.001, parseFloat(v)||1);
   document.getElementById('n-slider').value = Math.min(v, 100);
-  document.getElementById('n-input').value  = v;
-  document.getElementById('n-disp').textContent = v;
+  document.getElementById('n-input').value  = parseFloat(v.toFixed(3));
+  document.getElementById('n-disp').textContent = parseFloat(v.toFixed(3));
   updateNInterp(v);
   updateTable();
   drawChart();
 }
 function syncNInput(v){
-  v = Math.max(1, parseInt(v)||1);
-  document.getElementById('n-slider').value = Math.min(v,100);
-  document.getElementById('n-disp').textContent = v;
+  // 소수점 3자리 초과 실시간 차단
+  const s = String(v);
+  const dot = s.indexOf('.');
+  if(dot !== -1 && s.length - dot - 1 > 3){
+    const clamped = parseFloat(parseFloat(s).toFixed(3));
+    document.getElementById('n-input').value = clamped;
+    v = clamped;
+  }
+  v = Math.max(0.001, parseFloat(v)||1);
+  document.getElementById('n-slider').value = Math.min(v, 100);
+  document.getElementById('n-disp').textContent = parseFloat(v.toFixed(3));
   updateNInterp(v);
   updateTable();
   drawChart();
 }
-function getN(){ return Math.max(1, parseInt(document.getElementById('n-input').value)||1); }
+function enforceN3dec(el){
+  const v = parseFloat(el.value);
+  if(!isNaN(v)) el.value = parseFloat(v.toFixed(3));
+}
+function getN(){ return Math.max(0.001, parseFloat(parseFloat(document.getElementById('n-input').value).toFixed(3))||1); }
 
 function updateNInterp(n){
   const el = document.getElementById('n-interp');
-  if(n===1)      el.textContent = '완전 클러스터링 모드 (n=1 단순형)';
+  if(n<1)        el.textContent = '⚠ n < 1 — 비물리적 영역 (주의)';
+  else if(n===1) el.textContent = '완전 클러스터링 모드 (n=1 단순형)';
   else if(n<5)   el.textContent = '강한 클러스터링 (개발 초기 공정)';
   else if(n<20)  el.textContent = '중간 클러스터링 (Analog/RF 등)';
   else if(n<50)  el.textContent = '약한 클러스터링 (성숙 로직 공정)';
