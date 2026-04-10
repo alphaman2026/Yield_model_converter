@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alphanam ...  Yield Model D₀ Converter v2</title>
+<title>Alphanam ... Yield Model D₀ Converter v2</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=IBM+Plex+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -532,10 +532,15 @@ td.tcy{color:var(--yellow);}
           <div class="rv cg" id="r-y">—</div>
           <div class="ru">A = <span id="r-a">—</span> cm²</div>
         </div>
-        <div class="ri">
+        <div class="ri" style="grid-column:span 1">
           <div class="rl" id="r-tgt-lbl">B-E D₀</div>
           <div class="rv co" id="r-tgt">—</div>
           <div class="ru">defects/cm²</div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+            <div class="rl" style="color:var(--yellow);">B-E D₀ (inch²)</div>
+            <div class="rv" style="color:var(--yellow);font-size:16px;" id="r-tgt-inch">—</div>
+            <div class="ru">defects/inch²</div>
+          </div>
         </div>
       </div>
       <div class="dev-wrap">
@@ -692,7 +697,7 @@ function setMode(m){
     tp.className='tab tp';
     btn.className='conv-btn btn-p';
     d0lbl.innerHTML='Poisson D₀ <span class="badge badge-key">입력</span><br><span class="unit">(defects / cm²)</span>';
-    tgtlbl.innerHTML='B-E D₀ 결과 <span class="badge" style="background:rgba(255,112,64,.12);color:var(--orange);">출력</span><br><span class="unit">(defects / cm²)</span>';
+    tgtlbl.innerHTML='B-E D₀ 결과 <span class="badge" style="background:rgba(255,112,64,.12);color:var(--orange);">출력</span><br><span class="unit">(defects / cm²)</span><br><span class="unit" style="color:var(--yellow);" id="tgt-inch-inline"></span>';
     d0inp.className='inp-p'; tinp.className='inp-be';
   } else {
     tbe.className='tab tbe';
@@ -711,11 +716,13 @@ function setMode(m){
 
 // ══ Yield functions ══
 function yPoisson(d0,a){ return Math.exp(-d0*a); }
-function yBE(d0,a,n)   { return Math.pow(1+d0*a/n, -n); }
+function yBE(d0,a,n)   { return 1 / Math.pow(1+d0*a, n); }
 
 // Convert Poisson D0 → BE D0
-function p2be(d0p,a,n){ const y=yPoisson(d0p,a); return n*(Math.pow(y,-1/n)-1)/a; }
+// Y = exp(-d0p*a), then D0_BE = (Y^(-1/n) - 1) / a
+function p2be(d0p,a,n){ const y=yPoisson(d0p,a); return (Math.pow(y,-1/n)-1)/a; }
 // Convert BE D0 → Poisson D0
+// Y = 1/(1+d0be*a)^n, then D0_P = -ln(Y)/a
 function be2p(d0be,a,n){ const y=yBE(d0be,a,n); return -Math.log(y)/a; }
 
 function fmt(v,d=5){ return isNaN(v)||!isFinite(v)?'—':v.toFixed(d); }
@@ -751,6 +758,9 @@ function convert(){
   document.getElementById('r-n').textContent=n;
   document.getElementById('r-y').textContent=(y*100).toFixed(3)+'%';
   document.getElementById('r-a').textContent=a;
+  // B-E D0 단위 변환: 1 inch² = 6.4516 cm²
+  const d0be_show = (mode==='p') ? d0be : d0in;
+  document.getElementById('r-tgt-inch').textContent = fmt(d0be_show * 6.4516, 5);
 
   // deviation
   const diff=Math.abs(d0be-d0p)/d0p*100;
